@@ -1,0 +1,212 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.NetworkInformation;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+
+using static PokerChips.Program;
+
+namespace PokerChips
+{
+    internal class Program
+    {
+        public class Chips
+        {
+            public static int[] Mix(int Players, int ChipsCount)
+            {
+                Random rnd = new Random();
+                int Remainder = ChipsCount;
+                int PlayerChips;
+                int[] Array = new int[Players];
+                for (int i = 0; i < Players; i++)
+                {
+                    if (i == Players - 1) { Array[i] = Remainder; break; }
+                    PlayerChips = rnd.Next(Remainder);
+                    Array[i] = PlayerChips;
+                    Remainder -= PlayerChips;
+                }
+                return Array;
+            }
+            public static int[] MaximumFlags(int[] Array, int ChipsPerPlayer)
+            {
+                int[] Maximums = new int[Array.Count()];
+                int Index = 0;
+                foreach (int Node in Array)
+                {
+                    Maximums[Index] = (Node > ChipsPerPlayer) ? 1 : 0;
+                    Index++;
+                }
+                return Maximums;
+            }
+            public static int[] MinimumFlags(int[] Array, int ChipsPerPlayer)
+            {
+                int[] Minimums = new int[Array.Count()];
+                int Index = 0;
+                foreach (int Node in Array)
+                {
+                    Minimums[Index] = (Node < ChipsPerPlayer) ? 1 : 0;
+                    Index++;
+                }
+                return Minimums;
+            }
+            public static int FindMaximum (int[] Array, int ChipsPerPlayer)
+            {
+                int Maximum = Array[0];
+                foreach (int Node in Array)
+                {
+                    if (Node > Maximum)
+                    {
+                        Maximum = Node;
+                    }
+                }
+                return Maximum;
+            }
+            public static int FindMaximumIndex(int[] Array, int ChipsPerPlayer)
+            {
+                int Maximum = Array[0];
+                int MaximumIndex = 0;
+                int Index = 0;
+                foreach (int Node in Array)
+                {
+                    if (Node > Maximum)
+                    {
+                        Maximum = Node;
+                        MaximumIndex = Index;
+                    }
+                    Index++;
+                }
+                return MaximumIndex;
+            }
+
+            public static (int[] NewRing, int Moves) MoveLeft(int[] Array, int Index, int maxIndex, int Radius, int ChipsPerPlayer)
+            {
+                int Moves = 0;
+                int ChipsNeeded = ChipsPerPlayer - Array[Index];
+                int ChipsAvaliable = Array[maxIndex] - ChipsPerPlayer;
+                int MovingChipsNumber = (ChipsNeeded > ChipsAvaliable) ? ChipsAvaliable : ChipsNeeded;
+                if (MovingChipsNumber==0) { return (Array, Moves); } 
+                else 
+                {
+                    while (Array[Index] < ChipsPerPlayer && Array[maxIndex] > ChipsPerPlayer)
+                    {
+                        Array[maxIndex]--;
+                        Array[Index]++;
+                        Moves += Radius;
+                    }
+                    //Раскомментировать следующие строки для отображения процесса:
+                    //Console.WriteLine("\t Из позиции " + maxIndex + " (" + MovingChipsNumber + " ф.)  <-  на " + Radius + " за " + Moves + " Перемещений");
+                    //Console.WriteLine("\tРезультат передвижений: " + string.Join(", ", Array) + "\n");
+                    return (Array, Moves);
+                }
+                
+            }
+            public static (int[] NewRing, int Moves) MoveRight(int[] Array,int Index,int maxIndex, int Radius, int ChipsPerPlayer)
+            {
+                int Moves = 0;
+                int ChipsNeeded = ChipsPerPlayer - Array[Index];
+                int ChipsAvaliable = Array[maxIndex] - ChipsPerPlayer;
+                int MovingChipsNumber = (ChipsNeeded > ChipsAvaliable) ? ChipsAvaliable : ChipsNeeded;
+                if (MovingChipsNumber == 0) { return (Array, Moves); }
+                else
+                {
+                    while (Array[Index] < ChipsPerPlayer && Array[maxIndex] > ChipsPerPlayer)
+                    {
+                        Array[maxIndex]--;
+                        Array[Index]++;
+                        Moves += Radius;
+                    }
+                    //Раскомментировать следующие строки для отображения процесса:
+                    //Console.WriteLine("\t Из позиции " + maxIndex + " (" + MovingChipsNumber + " ф.)  ->  на " + Radius + " за " + Moves + " Перемещений");
+                    //Console.WriteLine("\tРезультат передвижений: " + string.Join(", ", Array) + "\n");
+                    return (Array, Moves);
+                }
+            }
+        }
+    
+    static void Main(string[] args)
+        {
+            int TotalMoves=0;
+            int SearchRadius=1;
+            int LeftIndex=0, RightIndex=0;
+            Console.WriteLine("Введите число игроков (N):");
+            int N = int.TryParse(Console.ReadLine(), out int NumberOfFriends) ? NumberOfFriends : -1;
+            if (N <= 0) 
+            { 
+                Console.WriteLine("Число игроков должно быть больше 0!"); 
+                Console.ReadKey(); 
+                return; 
+            }
+            Console.WriteLine("Введите число фишек на каждого игрока (Chips):");
+            int BalanceChipsNumber = int.TryParse(Console.ReadLine(), out int ChipsPerPlayer) ? ChipsPerPlayer : -1;
+            if (BalanceChipsNumber <= 0)
+            { 
+                Console.WriteLine("Число фишек не может быть нулевым"); 
+                Console.ReadKey(); 
+                return; 
+            }
+            int TotalChips = N * BalanceChipsNumber;
+            
+            int[] Ring = Chips.Mix(N, TotalChips);
+            int[] StartRing = (int[])Ring.Clone();
+            int[] Minimums= new int[N];
+            int[] Maximums = new int[N];
+
+            int MaxIndex = 0;
+            int MaxChips = Ring[0];
+
+            Minimums = Chips.MinimumFlags(Ring, BalanceChipsNumber);
+            Maximums = Chips.MaximumFlags(Ring, BalanceChipsNumber);
+            MaxChips = Chips.FindMaximum(Ring, BalanceChipsNumber);
+            MaxIndex = Chips.FindMaximumIndex(Ring, BalanceChipsNumber);
+
+            Console.WriteLine("\tИдёт подсчёт передвижений...\n");
+            Thread thread = new Thread(() =>
+            {
+                while (MaxChips != BalanceChipsNumber)
+                {
+
+                    LeftIndex = (MaxIndex - SearchRadius < 0) ? Ring.Count() - SearchRadius : MaxIndex - SearchRadius;
+                    RightIndex = (MaxIndex + SearchRadius > Ring.Count() - 1) ? 0 : MaxIndex + SearchRadius;
+
+                    if (Minimums[LeftIndex] == 1)
+                    {
+                        TotalMoves += Chips.MoveLeft(Ring, LeftIndex, MaxIndex, SearchRadius, ChipsPerPlayer).Moves;
+                        Ring = Chips.MoveLeft(Ring, LeftIndex, MaxIndex, SearchRadius, ChipsPerPlayer).NewRing;
+                        MaxChips = 0;
+                        MaxIndex = 0;
+                        SearchRadius = 1;
+                    }
+                    else if (Minimums[RightIndex] == 1)
+                    {
+                        TotalMoves += Chips.MoveRight(Ring, RightIndex, MaxIndex, SearchRadius, ChipsPerPlayer).Moves;
+                        Ring = Chips.MoveRight(Ring, RightIndex, MaxIndex, SearchRadius, ChipsPerPlayer).NewRing;
+                        MaxChips = 0;
+                        MaxIndex = 0;
+                        SearchRadius = 1;
+                    }
+                    else
+                    {
+                        SearchRadius++;
+                    }
+                    Minimums = Chips.MinimumFlags(Ring, BalanceChipsNumber);
+                    Maximums = Chips.MaximumFlags(Ring, BalanceChipsNumber);
+                    MaxChips = Chips.FindMaximum(Ring, BalanceChipsNumber);
+                    MaxIndex = Chips.FindMaximumIndex(Ring, BalanceChipsNumber);
+                }
+            });
+            thread.Start();
+            thread.Join();
+            Console.Clear();
+            Console.WriteLine("\tИсходный набор: " + string.Join(", ", StartRing) + "\n");
+            Console.WriteLine("\tРезультат передвижений: " + string.Join(", ", Ring) + "\n");
+            Console.WriteLine("\tВсего передвижений - " + TotalMoves);
+            Console.ReadKey();
+        }
+       
+    }
+}
+
