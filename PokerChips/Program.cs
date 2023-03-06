@@ -17,21 +17,6 @@ namespace PokerChips
     {
         public class Chips
         {
-            public static int[] Mix(int Players, int ChipsCount)
-            {
-                Random rnd = new Random();
-                int Remainder = ChipsCount;
-                int PlayerChips;
-                int[] Array = new int[Players];
-                for (int i = 0; i < Players; i++)
-                {
-                    if (i == Players - 1) { Array[i] = Remainder; break; }
-                    PlayerChips = rnd.Next(Remainder);
-                    Array[i] = PlayerChips;
-                    Remainder -= PlayerChips;
-                }
-                return Array;
-            }
             public static int[] MaximumFlags(int[] Array, int ChipsPerPlayer)
             {
                 int[] Maximums = new int[Array.Count()];
@@ -134,29 +119,6 @@ namespace PokerChips
             int SearchRadius=1;
             int LeftIndex=0, RightIndex=0;
 
-            // Раскомменитровать строки ниже для случаёно генерации последовательностей.
-            //Console.WriteLine("Введите число игроков (N):");
-            //int N = int.TryParse(Console.ReadLine(), out int NumberOfFriends) ? NumberOfFriends : -1;
-            //if (N <= 0) 
-            //{ 
-            //    Console.WriteLine("Число игроков должно быть больше 0!"); 
-            //    Console.ReadKey(); 
-            //    return; 
-            //}
-            //Console.WriteLine("Введите число фишек на каждого игрока (Chips):");
-            //int BalanceChipsNumber = int.TryParse(Console.ReadLine(), out int ChipsPerPlayer) ? ChipsPerPlayer : -1;
-            //if (BalanceChipsNumber <= 0)
-            //{ 
-            //    Console.WriteLine("Число фишек не может быть нулевым"); 
-            //    Console.ReadKey(); 
-            //    return; 
-            //}
-            //int TotalChips = N * BalanceChipsNumber;
-            //int[] Ring = Chips.Mix(N, TotalChips);
-            //N = Ring.Count();
-            //BalanceChipsNumber = Ring.Sum() / N;
-
-
             #region Ввод данных в консоль
             Console.WriteLine("Введите последовательность данных через запятую и нажмите клавишу Enter:");
             int[] Ring= { };
@@ -232,7 +194,7 @@ namespace PokerChips
             });
             thread.Start();
             thread.Join();
-            //Console.Clear();
+            Console.Clear();
             Console.WriteLine("\tИсходный набор: " + string.Join(", ", StartRing) + "\n");
             Console.WriteLine("\tРезультат передвижений: " + string.Join(", ", Ring) + "\n");
             Console.WriteLine("\tВсего передвижений - " + TotalMoves);
