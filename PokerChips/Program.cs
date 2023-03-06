@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net.NetworkInformation;
 using System.Reflection;
 using System.Text;
@@ -132,29 +133,60 @@ namespace PokerChips
             int TotalMoves=0;
             int SearchRadius=1;
             int LeftIndex=0, RightIndex=0;
-            Console.WriteLine("Введите число игроков (N):");
-            int N = int.TryParse(Console.ReadLine(), out int NumberOfFriends) ? NumberOfFriends : -1;
-            if (N <= 0) 
-            { 
-                Console.WriteLine("Число игроков должно быть больше 0!"); 
-                Console.ReadKey(); 
-                return; 
+
+            // Раскомменитровать строки ниже для случаёно генерации последовательностей.
+            //Console.WriteLine("Введите число игроков (N):");
+            //int N = int.TryParse(Console.ReadLine(), out int NumberOfFriends) ? NumberOfFriends : -1;
+            //if (N <= 0) 
+            //{ 
+            //    Console.WriteLine("Число игроков должно быть больше 0!"); 
+            //    Console.ReadKey(); 
+            //    return; 
+            //}
+            //Console.WriteLine("Введите число фишек на каждого игрока (Chips):");
+            //int BalanceChipsNumber = int.TryParse(Console.ReadLine(), out int ChipsPerPlayer) ? ChipsPerPlayer : -1;
+            //if (BalanceChipsNumber <= 0)
+            //{ 
+            //    Console.WriteLine("Число фишек не может быть нулевым"); 
+            //    Console.ReadKey(); 
+            //    return; 
+            //}
+            //int TotalChips = N * BalanceChipsNumber;
+            //int[] Ring = Chips.Mix(N, TotalChips);
+            //N = Ring.Count();
+            //BalanceChipsNumber = Ring.Sum() / N;
+
+
+            #region Ввод данных в консоль
+            Console.WriteLine("Введите последовательность данных через запятую и нажмите клавишу Enter:");
+            int[] Ring= { };
+            int BalanceChipsNumber=0;
+
+            while (Ring.Count()<1)
+            {
+                try
+                {
+                    Ring = Console.ReadLine().Replace(" ", "").Split(',').Select(element => int.Parse(element)).ToArray();
+                    if (Ring.Sum() % Ring.Count() != 0)
+                    {
+                        Console.WriteLine("Сумма фишек указанных при вводе не делится нацело на игроков. Введите корректные значения.");
+                        Ring = new int[0];
+                    }
+                }
+                catch (Exception)
+                {
+                    Console.WriteLine("Данные на входе имели не корректный формат, повторите ввод.");
+                }
             }
-            Console.WriteLine("Введите число фишек на каждого игрока (Chips):");
-            int BalanceChipsNumber = int.TryParse(Console.ReadLine(), out int ChipsPerPlayer) ? ChipsPerPlayer : -1;
-            if (BalanceChipsNumber <= 0)
-            { 
-                Console.WriteLine("Число фишек не может быть нулевым"); 
-                Console.ReadKey(); 
-                return; 
-            }
-            int TotalChips = N * BalanceChipsNumber;
-            
-            int[] Ring = Chips.Mix(N, TotalChips);
+            int N = Ring.Count();
+            BalanceChipsNumber = Ring.Sum() / N; 
+            #endregion
+
+            Console.WriteLine("\tN - " + N);
+            Console.WriteLine("\tChips - " + BalanceChipsNumber);
             int[] StartRing = (int[])Ring.Clone();
             int[] Minimums= new int[N];
             int[] Maximums = new int[N];
-
             int MaxIndex = 0;
             int MaxChips = Ring[0];
 
@@ -174,16 +206,16 @@ namespace PokerChips
 
                     if (Minimums[LeftIndex] == 1)
                     {
-                        TotalMoves += Chips.MoveLeft(Ring, LeftIndex, MaxIndex, SearchRadius, ChipsPerPlayer).Moves;
-                        Ring = Chips.MoveLeft(Ring, LeftIndex, MaxIndex, SearchRadius, ChipsPerPlayer).NewRing;
+                        TotalMoves += Chips.MoveLeft(Ring, LeftIndex, MaxIndex, SearchRadius, BalanceChipsNumber).Moves;
+                        Ring = Chips.MoveLeft(Ring, LeftIndex, MaxIndex, SearchRadius, BalanceChipsNumber).NewRing;
                         MaxChips = 0;
                         MaxIndex = 0;
                         SearchRadius = 1;
                     }
                     else if (Minimums[RightIndex] == 1)
                     {
-                        TotalMoves += Chips.MoveRight(Ring, RightIndex, MaxIndex, SearchRadius, ChipsPerPlayer).Moves;
-                        Ring = Chips.MoveRight(Ring, RightIndex, MaxIndex, SearchRadius, ChipsPerPlayer).NewRing;
+                        TotalMoves += Chips.MoveRight(Ring, RightIndex, MaxIndex, SearchRadius, BalanceChipsNumber).Moves;
+                        Ring = Chips.MoveRight(Ring, RightIndex, MaxIndex, SearchRadius, BalanceChipsNumber).NewRing;
                         MaxChips = 0;
                         MaxIndex = 0;
                         SearchRadius = 1;
@@ -200,7 +232,7 @@ namespace PokerChips
             });
             thread.Start();
             thread.Join();
-            Console.Clear();
+            //Console.Clear();
             Console.WriteLine("\tИсходный набор: " + string.Join(", ", StartRing) + "\n");
             Console.WriteLine("\tРезультат передвижений: " + string.Join(", ", Ring) + "\n");
             Console.WriteLine("\tВсего передвижений - " + TotalMoves);
