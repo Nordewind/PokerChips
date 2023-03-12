@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Deployment.Internal;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Net.NetworkInformation;
@@ -190,6 +191,7 @@ namespace PokerChips
         
         static void Main(string[] args)
         {
+           
             #region Ввод данных в консоль
             Console.WriteLine("Введите последовательность данных через запятую и нажмите клавишу Enter:");
             int[] Ring = { };
@@ -214,9 +216,6 @@ namespace PokerChips
             int N = Ring.Count();
             BalanceChipsNumber = Ring.Sum() / N;
             #endregion
-
-            Console.WriteLine("\tPlayers - " + N);
-            Console.WriteLine("\tBalanceChips - " + BalanceChipsNumber);
             int[] StartRing = (int[])Ring.Clone();
             int[] Minimums = new int[N];
             int[] Maximums = new int[N];
@@ -225,47 +224,52 @@ namespace PokerChips
 
             int MaxIndex = 0;
             int MaxChips = Ring[0];
-
-            Minimums = Chips.MinimumFlags(Ring, BalanceChipsNumber);
-            Maximums = Chips.MaximumFlags(Ring, BalanceChipsNumber);
-            MaxChips = Chips.FindMaximum(Ring, BalanceChipsNumber);
-            MaxIndex = Chips.FindMaximumIndex(Ring, BalanceChipsNumber);
-
-            MaxFlowArray = Chips.FindMaximumFlow(Ring, BalanceChipsNumber);
-            TotalCosts = Chips.FindMoves(Ring, BalanceChipsNumber);
-
-            #region Initiate Graph
             int FlowChip = BalanceChipsNumber;
             var CurrentFlows = new List<int>();
             var Rows = new List<int>();
             var Columns = new List<int>();
             int count = 0;
-            foreach (int min in Minimums)
+            void Iniciate(int[] ring, int balanceChipsNumber)
             {
-                if (min == 1)
-                {
-                    Columns.Add(count);
-                }
-                count++;
+                Minimums = Chips.MinimumFlags(ring, balanceChipsNumber);
+                Maximums = Chips.MaximumFlags(ring, balanceChipsNumber);
+                MaxChips = Chips.FindMaximum(ring, balanceChipsNumber);
+                MaxIndex = Chips.FindMaximumIndex(ring, balanceChipsNumber);
+
+                MaxFlowArray = Chips.FindMaximumFlow(ring, balanceChipsNumber);
+                TotalCosts = Chips.FindMoves(ring, balanceChipsNumber);
             }
-            count = 0;
-            foreach (int max in Maximums)
+            void MiniMax(int[] min, int[] max)
             {
-                if (max == 1)
+                foreach (int Min in Minimums)
                 {
-                    Rows.Add(count);
+                    if (Min == 1)
+                    {
+                        Columns.Add(count);
+                    }
+                    count++;
                 }
-                count++;
+                count = 0;
+                foreach (int Max in Maximums)
+                {
+                    if (Max == 1)
+                    {
+                        Rows.Add(count);
+                    }
+                    count++;
+                }
             }
-            #endregion
+
+            Iniciate(Ring, BalanceChipsNumber);
+            Console.WriteLine("\tPlayers - " + N);
+            Console.WriteLine("\tBalanceChips - " + BalanceChipsNumber);
+            MiniMax(Minimums, Maximums);
 
             Console.WriteLine("\n\n");
             Console.WriteLine("\tИдёт подсчёт передвижений...\n");
             int Cost = 1;
             int MinMoves = int.MaxValue;
-            int Delta = BalanceChipsNumber;
             int MinFlow = int.MaxValue;
-            int EXT = int.MaxValue;
             while (Cost <= Ring.Count() / 2)
             {
                 Console.WriteLine("\tFlow\n");
@@ -308,7 +312,6 @@ namespace PokerChips
                         {
                             MinFlow = MaxFlowArray[i, j];
                             MinMoves = MaxFlowArray[i, j] * TotalCosts[i, j];
-                            Delta = EXT;
                             FromCell = Rows[i];
                             ToCell = Columns[j];
                         }
@@ -325,7 +328,6 @@ namespace PokerChips
                     CW = Math.Abs(FromCell - ToCell);
                     CCW = Ring.Count() - CW;
                 }
-
                 if (FromCell == int.MaxValue && ToCell == int.MaxValue) { Cost++; } // следующая величина потока
                 // сдвигаем фишки
                 if (CW != 0 && CCW != 0)
@@ -339,39 +341,15 @@ namespace PokerChips
                         Ring = Chips.MoveRight(Ring, FromCell, ToCell, MinFlow);
                     }
                 }
-                #region Refresh Graph
+                #region Refresh
                 From = 0; To = 0;
                 MinFlow = int.MaxValue;
-                Delta = BalanceChipsNumber;
                 MinMoves = int.MaxValue;
-                EXT = int.MaxValue;
                 Columns.Clear();
                 Rows.Clear();
                 count = 0;
-                Minimums = Chips.MinimumFlags(Ring, BalanceChipsNumber);
-                Maximums = Chips.MaximumFlags(Ring, BalanceChipsNumber);
-                MaxChips = Chips.FindMaximum(Ring, BalanceChipsNumber);
-                MaxIndex = Chips.FindMaximumIndex(Ring, BalanceChipsNumber);
-                MaxFlowArray = Chips.FindMaximumFlow(Ring, BalanceChipsNumber);
-                TotalCosts = Chips.FindMoves(Ring, BalanceChipsNumber);
-                count = 0;
-                foreach (int min in Minimums)
-                {
-                    if (min == 1)
-                    {
-                        Columns.Add(count);
-                    }
-                    count++;
-                }
-                count = 0;
-                foreach (int max in Maximums)
-                {
-                    if (max == 1)
-                    {
-                        Rows.Add(count);
-                    }
-                    count++;
-                }
+                Iniciate(Ring, BalanceChipsNumber);
+                MiniMax(Minimums, Maximums);
                 #endregion
             }
             //Console.Clear();
